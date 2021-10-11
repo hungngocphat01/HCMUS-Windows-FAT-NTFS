@@ -14,7 +14,6 @@ LOW LEVEL (đọc/ghi trên dữ liệu nhị phân)
 - Constructor của FATVolume phải đọc được các thông tin cần thiết (Sc, Sb, Nf, ...).
 - Từ đó, constructor đọc bảng FAT của volume.
 - Xây dựng cây thư mục gốc cho phân vùng này.
-- Trong quá trình xây dựng cây thư mục gốc, (đệ quy) và xây dựng luôn cả các cây thư mục con cho phân vùng.
 
 # 2. Quá trình đọc RDET trên FAT32
 - Trên FAT32, RDET nằm trên vùng DATA.
@@ -51,3 +50,8 @@ LOW LEVEL (đọc/ghi trên dữ liệu nhị phân)
     + attr: phải là mảng của các thuộc tính (bằng chuỗi) của thư mục này.
     + sectors: phải là mảng các chỉ số sector tương ứng với dữ liệu nhị phân của thư mục này.
     + size: phải là kích thước (bằng byte) của các sector trong thư mục.
+
+# 5. Khi tạo một object Directory 
+- Đọc các thông tin cần thiết và lưu vào các biến đã override từ abstract class 
+- RDET và SDET có cách xây dựng hơi khác nhau.
+- Khi tạo một object Directory, chỉ đọc các thông tin cơ bản, không đọc SDET ngay. Việc đọc SDET sẽ được làm qua hàm build_tree()

@@ -3,6 +3,7 @@ from AbstractBaseClasses import AbstractVolume, AbstractDirectory, AbstractFile
 
 class FATVolume(AbstractVolume):
     # Override các abstract attribute 
+    # Trong python để "khai báo" là mình sẽ override các abstract attribute của class cha thì mình khởi tạo giá trị đầu cho nó (ở đây khởi tạo là None [giống null của C++])
     root_directory = None 
     size = None
     volume_label = None 
@@ -30,6 +31,8 @@ class FATVolume(AbstractVolume):
         self.sf = ...
         # Đọc chỉ số cluster bắt đầu của RDET: 4 byte tại 0x2C
         self.root_cluster = ...
+        # Chỉ số sector bắt đầu của data 
+        self.data_begin_sector = self.sb + self.nf * self.sf
 
         # Đọc bảng FAT (sf byte tại offset sb)
         self.fat_table_buffer = read_sectors(self.file_object, self.sb, self.sf)
@@ -43,8 +46,6 @@ class FATVolume(AbstractVolume):
     def access_fat_table(self):
         return self.fat_table_buffer[0:256]
 
-
-    @staticmethod
     def read_cluster_chain(n) -> list: 
         """
         Hàm dò bảng FAT để tìm ra dãy các cluster cho một entry nhất định, bắt đầu từ cluster thứ `n` truyền vào.
@@ -61,9 +62,14 @@ class FATVolume(AbstractVolume):
         
     @staticmethod
     def cluster_chain_to_sector_chain(cluster_chain) -> list: 
+        """
+        Hàm chuyển dãy các cluster sang dãy các sector
+        Biết rằng 1 cluster có Sc sectors 
+        Với cluster k thì nó bắt đầu chiếm từ cluster thứ `data_begin_sector + k * Sc`, và chiếm Sc sectors
+        """
         sector_chain = []
         
-        # TODO: 
+        # TODO
 
         return sector_chain
 
@@ -99,7 +105,9 @@ class FATDirectory(AbstractDirectory):
         """
         Dựng cây thư mục con cho thư mục này
         """
-        pass
+        if self.subentries != None: 
+            # Nếu đã dựng rồi thì ko làm lại nữa
+            return 
 
     def process_subentry(self, binary_data):
         """

@@ -26,7 +26,7 @@ def read_string_file(file, offset, size) -> bytes:
 def read_number_file(file, offset, size) -> int:
     """
     Hàm đọc số nguyên từ file tại vị trí `offset` với kích thước `size`.
-    Trả về: int.
+    Trả về: int (hàm này đã xử lý số little endian).
     Ví dụ: đọc số bảng FAT NF (1 byte tại offset `10`)
     >>> read_string(file, '10', 1)
     """
@@ -69,6 +69,7 @@ def read_number_buffer(buffer, offset, size) -> int:
     Hàm đọc số nguyên không dấu từ buffer tại vị trí `offset` với kích thước `size`.
     Nếu offset viết theo hex, truyền vào dưới dạng chuỗi (vd: '0B', '0D', ...)
     Nếu offset viết ở hệ 10, truyền vào dưới dạng số (vd: 110, 4096, ...)
+    Hàm này đã xử lý số little endian.
     
     Cách dùng tương tự `read_string_buffer`
     """

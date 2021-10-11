@@ -1,0 +1,53 @@
+   HIGH LEVEL (giao diện người dùng)
+    ^                           ^
+====|===========================|========
+    v                           v
+ FATVolume                  NTFSVolume
+    ^                           ^
+====|===========================|========
+    v                           v
+LOW LEVEL (đọc/ghi trên dữ liệu nhị phân)
+
+
+# 1. Quá trình đọc một phân vùng FAT. 
+- High level tạo một object có kiểu FATVolume và truyền vào file nhị phân tương ứng với ổ đĩa này.
+- Constructor của FATVolume phải đọc được các thông tin cần thiết (Sc, Sb, Nf, ...).
+- Từ đó, constructor đọc bảng FAT của volume.
+- Xây dựng cây thư mục gốc cho phân vùng này.
+- Trong quá trình xây dựng cây thư mục gốc, (đệ quy) và xây dựng luôn cả các cây thư mục con cho phân vùng.
+
+# 2. Quá trình đọc RDET trên FAT32
+- Trên FAT32, RDET nằm trên vùng DATA.
+- Chỉ số cluster đầu tiên của RDET là 4 byte tại offset 2C (gọi chỉ số này là root_cluster).
+- Từ root_cluster, dò trên bảng FAT bắt đầu tại vị trí root_cluster (gọi hàm để dò).
+- Từ các cluster tìm được, tính ra các sector tương ứng với các cluster đó (gọi hàm để tính).
+- Đọc dữ liệu nhị phân của các sector đã tìm được và nối chúng lại theo đúng thứ tự. Đó chính là RDET.
+
+# 3. Quá trình phân tích RDET/SDET
+- Lần lượt đọc dữ liệu nhị phân cho từng entry từ RDET/SDET (mỗi entry 32 byte).
+- Đọc trạng thái của entry: 1 byte tại offset 00.
+    + Nếu trạng thái này là 0x00, 0x05 hoặc 0xE5 thì bỏ qua entry này. 
+    + Ngược lại, đẩy entry này vào một hàng đợi.
+- Sau khi đọc xong hết các entry, lần lượt lấy các entry ra khỏi hàng đợi.
+    + Nếu entry này là entry chính: tạo object thích hợp cho entry này (FATDirectory, FATFile) và đẩy vào mảng sub_entries.
+    + Nếu entry này là entry phụ: gọi hàm process_subentry() trên entry chính gần nhất (phần tử cuối của mảng subentries).
+
+# 4. Các interface yêu cầu từ high level 
+- Với Volume (FATVolume, NTFSVolume):
+    + root_directory: phải là con trỏ trỏ đến thư mục gốc của volume.
+    + size: phải là kích thước của volume. 
+    + volume_label: là chuỗi biểu diễn tên của volume. 
+    + file_object: con trỏ đến disk image file biểu diễn bởi volume này
+- Với Directory (FATDirectory, NTFSDirectory):
+    + volume: phải là con trỏ trỏ đến volume chứa thư mục này (để từ đó truy cập vô được bảng FAT cũng như hàm đọc cluster, hàm đọc sector, ...).
+    + subentries[]: phải là mảng của các subentries (file/subdirectory) của thư mục này. 
+    + name: phải là tên của thư mục này.
+    + attr[]: phải là mảng của các thuộc tính (bằng chuỗi) của thư mục này.
+    + sectors[]: phải là mảng các chỉ số sector tương ứng với dữ liệu nhị phân của thư mục này.
+    + build_tree(): phải là hàm để dựng được danh sách các subentry tương ứng với thư mục này (dữ liệu là từ SDET/RDET của thư mục). Danh sách này lưu vào mảng subentries[].
+- Với File (FATFile, NTFSFile):
+    + volume: phải là con trỏ trỏ đến volume chứa file này (để từ đó truy cập vô được bảng FAT cũng như hàm đọc cluster, hàm đọc sector, ...).
+    + name: phải là tên của thư mục này.
+    + attr: phải là mảng của các thuộc tính (bằng chuỗi) của thư mục này.
+    + sectors: phải là mảng các chỉ số sector tương ứng với dữ liệu nhị phân của thư mục này.
+    + size: phải là kích thước (bằng byte) của các sector trong thư mục.

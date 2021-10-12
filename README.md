@@ -9,3 +9,22 @@ Gồm các file
 - `drive_fat.bin`: file ổ đĩa ảo FAT32.
 - `TEST_DRIVE_DATA.zip`: nội dung của ổ đĩa ảo (để tiện so sánh khi test).
 - `MD5SUM.txt`: MD5 của 2 file ổ đĩa ảo.
+
+Cây thư mục của ổ đĩa ảo 
+```
+.
+├── DOCUMENT
+│   ├── BAITAP
+│   │   ├── Hệ điều hành.txt
+│   │   └── Toán ứng dụng.png
+│   ├── GIẢI ĐÁP THẮC MẮC PROJECT 1.docx
+│   ├── hackintosh.txt
+│   └── NESOnTapKTLT_main.pdf
+├── HINH ANH
+│   ├── bliss.jpg
+│   └── ponk.jpg
+├── MUSIC
+│   └── Mirai Harmony.mp3
+└── onthi.txt
+4 directories, 9 files
+```

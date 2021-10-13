@@ -86,6 +86,7 @@ class FATDirectory(AbstractDirectory):
     sectors = None
     modified_date = None 
     modified_time = None
+    path = None
 
     def __init__(self, main_entry_buffer: bytes, volume: FATVolume):
         """

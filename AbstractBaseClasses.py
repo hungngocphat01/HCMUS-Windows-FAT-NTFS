@@ -39,6 +39,14 @@ class AbstractVolume(metaclass=ABCMeta):
 class AbstractDirectory(metaclass=ABCMeta):
     @property
     @abstractmethod
+    def path(self) -> str:
+        """
+        Đường dẫn đến thư mục
+        """
+        pass
+
+    @property
+    @abstractmethod
     def volume(self) -> AbstractVolume:
         """
         Con trỏ đến volume chứa thư mục này (để truy cập vào bảng FAT/MFT và duyệt các cluster)
@@ -96,6 +104,14 @@ class AbstractDirectory(metaclass=ABCMeta):
 
 
 class AbstractFile(metaclass=ABCMeta):
+    @property
+    @abstractmethod
+    def path(self) -> str:
+        """
+        Đường dẫn đến tập tin
+        """
+        pass
+
     @property
     @abstractmethod
     def volume(self) -> AbstractVolume:

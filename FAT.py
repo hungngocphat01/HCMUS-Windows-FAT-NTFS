@@ -1,4 +1,4 @@
-from lowlevel import * 
+from LowLevel import * 
 from AbstractBaseClasses import AbstractVolume, AbstractDirectory, AbstractFile
 
 class FATVolume(AbstractVolume):
@@ -88,7 +88,7 @@ class FATDirectory(AbstractDirectory):
     modified_time = None
     path = None
 
-    def __init__(self, main_entry_buffer: bytes, volume: FATVolume):
+    def __init__(self, main_entry_buffer: bytes, parent_path: str, volume: FATVolume):
         """
         Constructor nhận vào một buffer thể hiện các byte cho entry này.
         TODO: đọc các thông tin như như tên, kích thước, attribute, ...
@@ -98,6 +98,9 @@ class FATDirectory(AbstractDirectory):
         self.attr = [] # attribute đọc thành một mảng các chuỗi. Vd: ['Hidden', 'System', ...]
         self.subentries = None
         self.sectors = []
+        
+        # self.path là đường dẫn của thư mục hiện tại = parent_path + '/' + self.name
+        # set biến này sau khi đọc được tên của entry
     
     def get_binary_content(self):
         pass
@@ -121,4 +124,5 @@ class FATFile(AbstractFile):
     # TODO: Override các abstract attribute 
 
     # TODO: Constructor 
-    pass 
+    def __init__(self, main_entry_buffer: bytes, parent_path: str, volume: FATVolume):
+        pass

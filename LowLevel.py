@@ -60,7 +60,7 @@ def read_string_buffer(buffer, offset, size=1) -> bytes:
     elif isinstance(offset, int):
         int_offset = offset
     else:
-        raise 'Offset không phù hợp! Chỉ có thể là số hoặc chuỗi!'
+        raise ValueError('Offset không phù hợp! Chỉ có thể là số hoặc chuỗi!')
         
     return buffer[offset:offset+size]
     

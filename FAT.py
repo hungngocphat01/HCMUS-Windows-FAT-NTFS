@@ -20,6 +20,9 @@ class FATVolume(AbstractVolume):
         - Dựng cây thư mục gốc từ RDET và lưu vào self.root_directory.
         """
         self.file_object = file_object
+
+        # Kiểm tra boot sector 0x55AA
+        assert read_number_file(self.file_object, '1fa', 1) == dec('aa55'), 'Boot sector sign 0xAA55 not found!'
               
         # Đọc Sc (số sector cho 1 cluster): 1 byte tại 0x0D
         self.sc = read_number_file(self.file_object, '0x0D', 1)
@@ -43,8 +46,6 @@ class FATVolume(AbstractVolume):
 
         # TODO: dựng cây thư mục gốc
 
-    def access_fat_table(self):
-        return self.fat_table_buffer[0:256]
 
     def read_cluster_chain(n) -> list: 
         """

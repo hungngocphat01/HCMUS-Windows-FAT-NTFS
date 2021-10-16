@@ -49,7 +49,7 @@ class TestDirectory(AbstractDirectory):
     def build_tree(self):
         if self.subentries is not None:
             return 
-    
+
         self.subentries = []
         for entry in self.path_obj.iterdir():
             entry_path = self.path_obj / entry.name

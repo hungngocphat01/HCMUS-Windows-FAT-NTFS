@@ -36,12 +36,15 @@ class AbstractVolume(metaclass=ABCMeta):
         """
         pass
 
-class AbstractDirectory(metaclass=ABCMeta):
+class AbstractEntry(metaclass=ABCMeta):
+    """
+    Lớp đối tượng thể hiện một entry
+    """
     @property
     @abstractmethod
     def path(self) -> str:
         """
-        Đường dẫn đến thư mục
+        Đường dẫn đến entry
         """
         pass
 
@@ -49,15 +52,7 @@ class AbstractDirectory(metaclass=ABCMeta):
     @abstractmethod
     def volume(self) -> AbstractVolume:
         """
-        Con trỏ đến volume chứa thư mục này (để truy cập vào bảng FAT/MFT và duyệt các cluster)
-        """
-        pass
-
-    @property
-    @abstractmethod
-    def subentries(self) -> list:
-        """
-        Mảng của các subentries (file/subdirectory) của thư mục này.
+        Con trỏ đến volume chứa entry này (để truy cập vào bảng FAT/MFT và duyệt các cluster)
         """
         pass
 
@@ -95,6 +90,15 @@ class AbstractDirectory(metaclass=ABCMeta):
         """
         pass
 
+class AbstractDirectory(AbstractEntry):
+    @property
+    @abstractmethod
+    def subentries(self) -> list:
+        """
+        Mảng của các subentries (file/subdirectory) của thư mục này.
+        """
+        pass
+
     @abstractmethod
     def build_tree(self):
         """
@@ -103,47 +107,7 @@ class AbstractDirectory(metaclass=ABCMeta):
         pass
 
 
-class AbstractFile(metaclass=ABCMeta):
-    @property
-    @abstractmethod
-    def path(self) -> str:
-        """
-        Đường dẫn đến tập tin
-        """
-        pass
-
-    @property
-    @abstractmethod
-    def volume(self) -> AbstractVolume:
-        """
-        Con trỏ đến volume chứa file này (để truy cập vào bảng FAT/MFT và duyệt các cluster)
-        """
-        pass
-
-    @property
-    @abstractmethod
-    def name(self) -> str:
-        """
-        Tên của file này
-        """
-        pass
-
-    @property
-    @abstractmethod
-    def attr(self) -> list:
-        """
-        Mảng của các thuộc tính (bằng chuỗi) của thư mục này.
-        """
-        pass
-
-    @property
-    @abstractmethod
-    def sectors(self) -> list:
-        """
-        Là mảng các chỉ số sector chứa dữ liệu nhị phân của file này.
-        """
-        pass
-
+class AbstractFile(AbstractEntry):
     @property
     @abstractmethod
     def size(self) -> int:
@@ -152,12 +116,6 @@ class AbstractFile(metaclass=ABCMeta):
         """
         pass
 
-    @property
     @abstractmethod
-    def modified_date(self) -> str:
-        pass
-
-    @property
-    @abstractmethod
-    def modified_time(self) -> str:
+    def dump_binary_data(self) -> str:
         pass

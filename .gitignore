@@ -127,3 +127,7 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# project-specific files 
+TEST_DRIVE_DATA.zip
+test.ipynb

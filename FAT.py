@@ -47,10 +47,9 @@ class FATVolume(AbstractVolume):
         self.fat_table_buffer = read_sectors(self.file_object, self.sb, self.sf)
 
         # Con trỏ đến thư mục gốc của volume này
+        # TODO: đọc RDET và tạo thư mục gốc (làm bên class FATDirectory)
         self.root_directory = None
         self.volume_label = ...
-
-        # TODO: dựng cây thư mục gốc
 
 
     def read_cluster_chain(n) -> list: 
@@ -108,13 +107,10 @@ class FATDirectory(AbstractDirectory):
         
         # self.path là đường dẫn của thư mục hiện tại = parent_path + '/' + self.name
         # set biến này sau khi đọc được tên của entry
-    
-    def get_binary_content(self):
-        pass
 
     def build_tree(self):
         """
-        Dựng cây thư mục con cho thư mục này
+        Dựng cây thư mục cho thư mục này (đọc các sector trong mảng `self.sectors` được SDET rồi xử lý)
         """
         if self.subentries != None: 
             # Nếu đã dựng rồi thì ko làm lại nữa

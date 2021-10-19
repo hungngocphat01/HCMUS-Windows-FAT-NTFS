@@ -43,7 +43,7 @@ class TestDirectory(AbstractDirectory):
             info: ZipInfo = self.volume.file_object.getinfo(self.path.lstrip('/') + '/')
             year, month, day, hr, min, sec = info.date_time
             self.modified_date = '%d-%d-%d' % (year, month, day)
-            self.modified_time = '%d-%d-%d' % (hr, min, sec)
+            self.modified_time = '%d:%d:%d' % (hr, min, sec)
             self.attr = info.external_attr
 
     def build_tree(self):
@@ -82,7 +82,7 @@ class TestFile(AbstractFile):
         info: ZipInfo = self.volume.file_object.getinfo(self.path.strip('/'))
         year, month, day, hr, min, sec = info.date_time
         self.modified_date = '%d-%d-%d' % (year, month, day)
-        self.modified_time = '%d-%d-%d' % (hr, min, sec)
+        self.modified_time = '%d:%d:%d' % (hr, min, sec)
         self.attr = info.external_attr
         self.size = info.file_size
     

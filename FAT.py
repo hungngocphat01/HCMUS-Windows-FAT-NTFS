@@ -21,11 +21,17 @@ class FATVolume(AbstractVolume):
         """
         self.file_object = file_object
 
-        # Kiểm tra boot sector 0x55AA
-        assert read_number_file(self.file_object, '1fa', 1) == dec('aa55'), 'Boot sector sign 0xAA55 not found!'
+        # Đọc boot sector
+        bootsec_buffer = read_sectors(self.file_object, 0, 1) # đọc sector thứ 0 (sector đầu tiên) và đọc 1 sector
+
+        # Đọc magic number 0xAA55
+        # Đọc 2 byte tại offset 0x1FA
+        magic_number = read_number_buffer(bootsec_buffer, '0x1FA', 2)
+        assert magic_number == 0xAA55, "Invalid boot sector: 0xAA55 not found at offset 0x1FA"
+
               
         # Đọc Sc (số sector cho 1 cluster): 1 byte tại 0x0D
-        self.sc = read_number_file(self.file_object, '0x0D', 1)
+        self.sc = read_number_buffer(bootsec_buffer, '0x0D', 1)
         # Đọc Sb (số sector để dành trước bảng FAT): 2 byte tại 0x0E
         self.sb = ...
         # Đọc Nf (số bảng FAT): 1 byte tại offset 0x10

@@ -11,29 +11,6 @@ def dec(hex: str) -> int:
     """
     return int(hex, 16)
 
-def read_string_file(file, offset, size) -> bytes:
-    """
-    Hàm đọc chuỗi từ file tại vị trí `offset` với kích thước `size`.
-    Trả về: bytes string.
-    Ví dụ: đọc tên HĐH (8 byte tại offset `03`)
-    >>> read_string(file, '03', 8)
-    """
-    int_offset = dec(offset)
-    file.seek(int_offset)
-    buffer = file.read(size)
-    return buffer
-
-def read_number_file(file, offset, size) -> int:
-    """
-    Hàm đọc số nguyên từ file tại vị trí `offset` với kích thước `size`.
-    Trả về: int (hàm này đã xử lý số little endian).
-    Ví dụ: đọc số bảng FAT NF (1 byte tại offset `10`)
-    >>> read_string(file, '10', 1)
-    """
-    buffer = read_string_file(file, offset, size)
-    # Reverse bytes (x86 is little endian)
-    return int(buffer[::-1].hex(), 16)
-
 def read_sectors(file, sector_begin, n_sector=1) -> bytes:
     """
     Hàm đọc `n_sector` sectors, bắt đầu tại sector có chỉ số `sector_begin`.

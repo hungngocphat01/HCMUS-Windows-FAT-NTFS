@@ -45,6 +45,16 @@ class Navigator:
             raise FileNotFoundError('Drive path does not exist')
         self.volume_path = volume_path
 
+    def create_fileobject(self):
+        if self.volume_path.endswith('.zip'):
+            return ZipFile(self.volume_path, 'r')
+        else: 
+            if os.name == 'nt':
+                fd = os.open(self.volume_path, os.O_RDONLY | os.O_BINARY)
+            else: 
+                fd = os.open(self.volume_path, os.O_RDONLY)
+            return os.fdopen(fd, 'rb')
+
     def initialize_root_directory(self, file_object):
         """
         Tạo một thể hiện cụ thể của AbstractDrive từ tham chiếu file nhận được.
@@ -60,16 +70,15 @@ class Navigator:
         # Detect FAT32 
         # Read boot sector
         bootsec_buffer = read_sectors(file_object, 0, 1)
-        fat32_volfs = read_number_buffer(bootsec_buffer, '52', 8)
+        fat32_volfs = read_string_buffer(bootsec_buffer, 0x52, 8)
         if b'FAT32' in fat32_volfs:
             self.volume = FATVolume(file_object)
+        # TODO: Detect NTFS
         else: 
             raise AttributeError('Filesystem not supported')
 
         self.volume.root_directory.build_tree()
         self.current_dir = self.volume.root_directory
-
-        # TODO: Detect NTFS
 
 
     def generate_table_view(self):

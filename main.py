@@ -17,7 +17,8 @@ def main():
     try:
         nav = Navigator()
         nav.select_volume()
-        with ZipFile(nav.volume_path, 'r') as f:
+
+        with nav.create_fileobject() as f:
             nav.initialize_root_directory(f)
             print('Root directory initialized!\n')
             nav.start_shell()

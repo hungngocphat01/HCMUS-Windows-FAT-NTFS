@@ -25,19 +25,12 @@ def read_sectors(file, sector_begin, n_sector=1) -> bytes:
 def read_string_buffer(buffer, offset, size=1) -> bytes:
     """
     Hàm đọc chuỗi từ buffer tại vị trí `offset` với kích thước `size`.
-    Nếu offset viết theo hex, truyền vào dưới dạng chuỗi (vd: '0B', '0D', ...)
-    Nếu offset viết ở hệ 10, truyền vào dưới dạng số (vd: 110, 4096, ...)
+    Nếu offset ở hệ 16 thì viết thêm tiền tố `0x`. Vd: `0x0DC`.
     
     Ví dụ: đọc tên file trên entry chính (8 byte tại offset `00`).
     >>> read_string(buffer, '00', 8)
     >>> read_string(buffer, 0, 8)
     """
-    if isinstance(offset, str):
-        int_offset = dec(offset)
-    elif isinstance(offset, int):
-        int_offset = offset
-    else:
-        raise ValueError('Offset không phù hợp! Chỉ có thể là số hoặc chuỗi!')
         
     return buffer[offset:offset+size]
     

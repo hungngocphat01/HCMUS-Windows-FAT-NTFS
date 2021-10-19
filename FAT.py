@@ -26,12 +26,12 @@ class FATVolume(AbstractVolume):
 
         # Đọc magic number 0xAA55
         # Đọc 2 byte tại offset 0x1FA
-        magic_number = read_number_buffer(bootsec_buffer, '0x1FA', 2)
+        magic_number = read_number_buffer(bootsec_buffer, 0x1FE, 2)
         assert magic_number == 0xAA55, "Invalid boot sector: 0xAA55 not found at offset 0x1FA"
 
               
         # Đọc Sc (số sector cho 1 cluster): 1 byte tại 0x0D
-        self.sc = read_number_buffer(bootsec_buffer, '0x0D', 1)
+        self.sc = read_number_buffer(bootsec_buffer, 0x0D, 1)
         # Đọc Sb (số sector để dành trước bảng FAT): 2 byte tại 0x0E
         self.sb = ...
         # Đọc Nf (số bảng FAT): 1 byte tại offset 0x10

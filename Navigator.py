@@ -58,7 +58,9 @@ class Navigator:
             return 
 
         # Detect FAT32 
-        fat32_volfs = read_number_file(file_object, '52', 8)
+        # Read boot sector
+        bootsec_buffer = read_sectors(file_object, 0, 1)
+        fat32_volfs = read_number_buffer(bootsec_buffer, '52', 8)
         if b'FAT32' in fat32_volfs:
             self.volume = FATVolume(file_object)
         else: 
@@ -66,6 +68,8 @@ class Navigator:
 
         self.volume.root_directory.build_tree()
         self.current_dir = self.volume.root_directory
+
+        # TODO: Detect NTFS
 
 
     def generate_table_view(self):
@@ -169,6 +173,14 @@ class Navigator:
         '- back: alias for history pop.\n' +
         '\n' +
         'Commands are CASE-SENSITIVE!\n')
+
+    def show_tree(self):
+        # TODO: implement tree command
+        pass
+
+    def dump_file(self, filename):
+        # TODO: implement dump command
+        pass 
 
     def start_shell(self):
         if self.current_dir == None: 

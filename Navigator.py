@@ -15,9 +15,9 @@ class Navigator:
         print(LEADING, *args, LEADING)
 
     def __init__(self):
-        self.platform =  sys.platform
-        if self.platform not in ['win32', 'linux']:
-            raise AttributeError('Unsupported platform. Only supports win32 and linux')
+        self.platform =  os.name
+        if self.platform not in ['nt', 'posix']:
+            raise AttributeError('Unsupported platform. Only supports Windows NT and POSIX.')
         # Tham chiếu đến object thư mục hiện tại 
         self.current_dir: AbstractDirectory = None 
         # Lịch sử duyệt (FIFO)
@@ -28,16 +28,20 @@ class Navigator:
         Chọn phân vùng cần thiết 
         """
         self.title_print('PLEASE SELECT YOUR VOLUME')
-        print('NOTICE: The program detected that you are using', self.platform)
+        print('NOTICE: The program detected that you are using', end=' ')
+        if self.platform == 'nt':
+            print('Windows NT')
+        else: 
+            print('POSIX (Linux, OS X, BSD, ...)')
+
         print('Please enter the volume path in the FOLLOWING CONVENTION.')
-        if self.platform == 'win32':
+        if self.platform == 'nt':
             print('Enter one CAPITAL LETTER. Example: C, D, E, ...')
         else: 
-            print('Enter the path to your block device. Example: /dev/sda1, /dev/sdc, ...')
+            print('Enter the path to your block device. Example: /dev/sda1, /dev/disk1s1, ...')
 
         print('\nTIP: You can also enter the path to a raw disk image.')
-        print('Also make sure that you are running the program with ROOT/ADMIN role if youre reading a physical volume.')
-        print('!!! NAIVE DEVELOPERS WARNING: DO NOT USE ON IMPORTANT PARTITIONS !!!!\n')
+        print('Also make sure that you have sufficient permission to read the block device.')
 
         volume_path = input('=> Enter your drive path: ')
 
@@ -73,6 +77,7 @@ class Navigator:
         fat32_volfs = read_string_buffer(bootsec_buffer, 0x52, 8)
         if b'FAT32' in fat32_volfs:
             self.volume = FATVolume(file_object)
+            print('FAT32 detected.')
         # TODO: Detect NTFS
         else: 
             raise AttributeError('Filesystem not supported')
@@ -189,49 +194,65 @@ class Navigator:
 
     def dump_file(self, filename):
         # TODO: implement dump command
-        pass 
+        pass
+
+    def read_text_file(self, filename):
+        assert filename != None, 'Filename not specified.'
+
+        for file in self.current_dir.subentries:
+            if file.name == filename:
+                binary_data: bytes = file.dump_binary_data()
+                string_data = binary_data.decode('utf8')
+                print('\n', string_data, '\n')
+                return 
+        raise FileNotFoundError('Bad filename: ' + filename)
 
     def start_shell(self):
         if self.current_dir == None: 
             raise RuntimeError('You did not select the root directory. This is due to a bug in the program')
         
-            print('Type help for help.')
+        print('Type help for help.')
         while True: 
-            user_inp = input('%s> ' % self.current_dir.name)
+            try:
+                user_inp = input('%s> ' % self.current_dir.name)
 
-            # Parse command
-            user_inp_lst = user_inp.split(' ', 1)
-            if (len(user_inp_lst)) == 0:
-                return
+                # Parse command
+                user_inp_lst = user_inp.split(' ', 1)
+                if (len(user_inp_lst)) == 0:
+                    return
 
-            command_verb = user_inp_lst[0]
-            if len(user_inp_lst) == 1:
-                command_arg = None 
-            else: 
-                command_arg = user_inp_lst[1]
-            
-            # Process command
-            if command_verb == 'help':
-                self.show_help()
-            elif command_verb == 'cd':
-                self.go_into_subdir(command_arg)
-            elif command_verb == 'ls':
-                self.list_entries()
-            elif command_verb == 'dump':
-                pass
-            elif command_verb == 'history':
-                if command_arg == 'list':
-                    self.history_list()
-                elif command_arg == 'pop':
+                command_verb = user_inp_lst[0]
+                if len(user_inp_lst) == 1:
+                    command_arg = None 
+                else: 
+                    command_arg = user_inp_lst[1]
+                
+                # Process command
+                if command_verb == 'help':
+                    self.show_help()
+                elif command_verb == 'cd':
+                    self.go_into_subdir(command_arg)
+                elif command_verb == 'ls':
+                    self.list_entries()
+                elif command_verb == 'dump':
+                    raise NotImplementedError('Command not implemented!')
+                elif command_verb == 'cat':
+                    self.read_text_file(command_arg)
+                elif command_verb == 'history':
+                    if command_arg == 'list':
+                        self.history_list()
+                    elif command_arg == 'pop':
+                        self.history_go_back()
+                    else:
+                        print('Action not supported. Type help for help.')
+                elif command_verb == 'back':
                     self.history_go_back()
-                else:
-                    print('Action not supported. Type help for help.')
-            elif command_verb == 'back':
-                self.history_go_back()
-            elif command_verb == 'tree':
-                pass
-            elif command_verb == 'exit':
-                return
-            else: 
-                print('Bad command: %s. Type help for help.' % command_verb)
+                elif command_verb == 'tree':
+                    raise NotImplementedError('Command not implemented!')
+                elif command_verb == 'exit':
+                    return
+                else: 
+                    print('Bad command: %s. Type help for help.' % command_verb)
+            except Exception as e:
+                print('An error occurred:', e)
                     

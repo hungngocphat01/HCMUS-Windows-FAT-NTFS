@@ -22,7 +22,7 @@ def read_sectors(file, sector_begin, n_sector=1) -> bytes:
     file.seek(512 * sector_begin)
     return file.read(512 * n_sector)
 
-def read_string_buffer(buffer, offset, size=1) -> bytes:
+def read_bytes_buffer(buffer, offset, size=1) -> bytes:
     """
     Hàm đọc chuỗi từ buffer tại vị trí `offset` với kích thước `size`.
     Nếu offset ở hệ 16 thì viết thêm tiền tố `0x`. Vd: `0x0DC`.
@@ -43,5 +43,5 @@ def read_number_buffer(buffer, offset, size) -> int:
     
     Cách dùng tương tự `read_string_buffer`
     """
-    buffer = read_string_buffer(buffer, offset, size)
+    buffer = read_bytes_buffer(buffer, offset, size)
     return dec(buffer[::-1].hex())

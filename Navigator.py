@@ -74,7 +74,7 @@ class Navigator:
         # Detect FAT32 
         # Read boot sector
         bootsec_buffer = read_sectors(file_object, 0, 1)
-        fat32_volfs = read_string_buffer(bootsec_buffer, 0x52, 8)
+        fat32_volfs = read_bytes_buffer(bootsec_buffer, 0x52, 8)
         if b'FAT32' in fat32_volfs:
             self.volume = FATVolume(file_object)
             print('FAT32 detected.')

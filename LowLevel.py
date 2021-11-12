@@ -45,3 +45,13 @@ def read_number_buffer(buffer, offset, size) -> int:
     """
     buffer = read_bytes_buffer(buffer, offset, size)
     return dec(buffer[::-1].hex())
+
+def read_sector_chain(file_object, sector_list):
+    """
+    Hàm đọc một dãy các sector từ mảng.
+    Trả về: buffer đọc được.
+    """
+    buffer = b''
+    for sector in sector_list:
+        buffer += read_sectors(file_object, sector, 1)
+    return buffer

@@ -29,45 +29,55 @@ class FATVolume(AbstractVolume):
         magic_number = read_number_buffer(bootsec_buffer, 0x1FE, 2)
         assert magic_number == 0xAA55, "Invalid boot sector: 0xAA55 not found at offset 0x1FA"
 
-              
+        
+        self.byte_per_sec = read_number_buffer(bootsec_buffer, 0xB, 2)
         # Đọc Sc (số sector cho 1 cluster): 1 byte tại 0x0D
         self.sc = read_number_buffer(bootsec_buffer, 0x0D, 1)
         # Đọc Sb (số sector để dành trước bảng FAT): 2 byte tại 0x0E
-        self.sb = ...
+        self.sb = read_number_buffer(bootsec_buffer, 0x0E, 2)
         # Đọc Nf (số bảng FAT): 1 byte tại offset 0x10
-        self.nf = ...
-        # Đọc Sf (số sector cho 1 bảng FAT): 4 byte tại 0x20
-        self.sf = ...
+        self.nf = read_number_buffer(bootsec_buffer, 0x10, 1)
+        # Đọc Sf (số sector cho 1 bảng FAT): 4 byte tại 0x24
+        self.sf = read_number_buffer(bootsec_buffer, 0x24, 4)
         # Đọc chỉ số cluster bắt đầu của RDET: 4 byte tại 0x2C
-        self.root_cluster = ...
+        self.root_cluster = read_number_buffer(bootsec_buffer, 0x2C, 4)
         # Chỉ số sector bắt đầu của data 
         self.data_begin_sector = self.sb + self.nf * self.sf
 
         # Đọc bảng FAT (sf byte tại offset sb)
         self.fat_table_buffer = read_sectors(self.file_object, self.sb, self.sf)
 
-        # Con trỏ đến thư mục gốc của volume này
-        # TODO: đọc RDET và tạo thư mục gốc (làm bên class FATDirectory)
-        self.root_directory = None
-        self.volume_label = ...
+        # RDET buffer
+        rdet_cluster_chain = self.read_cluster_chain(self.root_cluster)
+        rdet_sector_chain = self.cluster_chain_to_sector_chain(rdet_cluster_chain)
+        rdet_buffer = read_sector_chain(self.file_object, rdet_sector_chain)
+
+        self.root_directory = FATDirectory(rdet_buffer, '', self, isrdet=True)
+        # self.volume_label = read_bytes_buffer(bootsec_buffer, 0x2B, 11)
 
 
-    def read_cluster_chain(n) -> list: 
+    def read_cluster_chain(self, n) -> list: 
         """
         Hàm dò bảng FAT để tìm ra dãy các cluster cho một entry nhất định, bắt đầu từ cluster thứ `n` truyền vào.
         """
         # End-of-cluster sign
-        eoc_sign = [dec('0ffffff8'), dec('0fffffff'), dec('ffffffff')]
-        chain = [n]
-
-        # TODO: viết hàm đọc một dãy các cluster, bắt đầu tại cluster thứ n. Biết nếu đọc được cluster có giá trị nằm trong mảng eoc_sign thì việc đọc sẽ kết thúc và ta phải trả về dữ liệu đọc được
-        # Trong python, để kiểm ra phần tử k có nằm trong mảng arr hay không thì dùng cú pháp: 
-        # if (k in arr): 
+        eoc_sign = [0x00000000, 0xFFFFFF0, 0xFFFFFFF, 0XFFFFFF7, 0xFFFFFF8, 0xFFFFFFF0]
+        if n in eoc_sign:
+            return []
         
+        next_cluster = n
+        chain = [next_cluster]
+
+        while True:
+            # Phần tử FAT 2 ứng với cluster số 1
+            next_cluster = read_number_buffer(self.fat_table_buffer, next_cluster * 4, 4)
+            if next_cluster in eoc_sign:
+                break 
+            else:
+                chain.append(next_cluster)
         return chain 
         
-    @staticmethod
-    def cluster_chain_to_sector_chain(cluster_chain) -> list: 
+    def cluster_chain_to_sector_chain(self, cluster_chain) -> list: 
         """
         Hàm chuyển dãy các cluster sang dãy các sector
         Biết rằng 1 cluster có Sc sectors 
@@ -75,8 +85,10 @@ class FATVolume(AbstractVolume):
         """
         sector_chain = []
         
-        # TODO
-
+        for cluster in cluster_chain:
+            begin_sector = self.data_begin_sector + (cluster - 2) * self.sc
+            for sector in range(begin_sector, begin_sector + self.sc):
+                sector_chain.append(sector)
         return sector_chain
 
 
@@ -94,19 +106,33 @@ class FATDirectory(AbstractDirectory):
     modified_time = None
     path = None
 
-    def __init__(self, main_entry_buffer: bytes, parent_path: str, volume: FATVolume):
+    def __init__(self, main_entry_buffer: bytes, parent_path: str, volume: FATVolume, isrdet=False):
         """
         Constructor nhận vào một buffer thể hiện các byte cho entry này.
         TODO: đọc các thông tin như như tên, kích thước, attribute, ...
         """
+        # Dãy byte entry chính
+        self.entry_buffer = main_entry_buffer
         self.volume = volume # con trỏ đến volume đang chứa thư mục này
-        self.name = None 
-        self.attr = [] # attribute đọc thành một mảng các chuỗi. Vd: ['Hidden', 'System', ...]
+        # Tên entry 
+        self.name = read_bytes_buffer(main_entry_buffer, 0, 11).decode('utf-8').strip()
+        # Status
+        self.attr = read_number_buffer(main_entry_buffer, 0xB, 1)
+        # Danh sách các subentry
         self.subentries = None
-        self.sectors = []
-        
-        # self.path là đường dẫn của thư mục hiện tại = parent_path + '/' + self.name
-        # set biến này sau khi đọc được tên của entry
+
+        if not isrdet:
+            highbytes = read_number_buffer(main_entry_buffer, 0x14, 2)
+            lowbytes = read_number_buffer(main_entry_buffer, 0x1A, 2)
+            self.begin_cluster = highbytes * 0x100 + lowbytes
+            self.path = parent_path + '/' + self.name
+        else:
+            self.begin_cluster = self.volume.root_cluster
+            self.path = ''
+
+        cluster_chain = self.volume.read_cluster_chain(self.begin_cluster)
+        self.sectors = self.volume.cluster_chain_to_sector_chain(cluster_chain)
+            
 
     def build_tree(self):
         """
@@ -115,6 +141,21 @@ class FATDirectory(AbstractDirectory):
         if self.subentries != None: 
             # Nếu đã dựng rồi thì ko làm lại nữa
             return 
+        self.subentries = []
+        subentry_index = 0
+
+        # Đọc SDET (dữ liệu nhị phân) của thư mục
+        sdet_buffer = read_sector_chain(self.volume.file_object, self.sectors)
+        while True:
+            subentry_buffer = read_bytes_buffer(sdet_buffer, subentry_index, 32)
+            # Read type
+            entry_type = read_number_buffer(subentry_buffer, 0xB, 1)
+            if entry_type & 0x10 == 0x10:
+                # Là thư mục
+                self.subentries.append(FATDirectory(subentry_buffer, self.path, self.volume))
+            if entry_type == 0:
+                break
+            subentry_index += 32
 
     def process_subentry(self, binary_data):
         """

@@ -191,8 +191,15 @@ class Navigator:
         pass
 
     def dump_file(self, filename):
-        # TODO: implement dump command
-        pass
+        for file in self.current_dir.subentries:
+            if file.name == filename:
+                binary_data: bytes = file.dump_binary_data()
+                with open(filename, mode='wb') as out_file:
+                    print('Dumping', file.size, 'bytes to', filename, '...')
+                    out_file.write(binary_data)
+                    print('Done.')
+                return 
+        raise FileNotFoundError('Bad filename: ' + filename)
 
     def read_text_file(self, filename):
         assert filename != None, 'Filename not specified.'
@@ -233,7 +240,7 @@ class Navigator:
                 elif command_verb == 'ls':
                     self.list_entries()
                 elif command_verb == 'dump':
-                    raise NotImplementedError('Command not implemented!')
+                    self.dump_file(command_arg)
                 elif command_verb == 'cat':
                     self.read_text_file(command_arg)
                 elif command_verb == 'history':

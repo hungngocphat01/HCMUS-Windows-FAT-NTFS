@@ -95,34 +95,32 @@ class Navigator:
 
         def update_max_width(key, value):
             if key not in max_width:
-                max_width[key] = len(str(value))
+                max_width[key] = len(str(value)) + 4
             elif max_width[key] < len(str(value)): 
-                max_width[key] = len(str(value))
+                max_width[key] = len(str(value)) + 4
 
         for entry in self.current_dir.subentries:
             entry_info_list.append({
                 'name': entry.name, 
                 'size': 0 if isinstance(entry, AbstractDirectory) else entry.size, 
-                'attr': entry.attr, 
-                'date': entry.modified_date, 
-                'time': entry.modified_time
+                'attr': entry.attr
             })
 
             update_max_width('name', entry.name)
             update_max_width('attr', hex(int(entry.attr)))
-            update_max_width('date', entry.modified_date)
-            update_max_width('time', entry.modified_time)
+
             if isinstance(entry, AbstractFile):
                 update_max_width('size', entry.size)
+            else:
+                update_max_width('size', 5)
         
-        format_str = '{0: <%d} {1: <%d} {2: <%d} {3: <%d} {4: <%d}\n' % (
-            max_width['name'], max_width['size'], max_width['attr'], max_width['date'], max_width['time']
-        )
+        format_str = '{0: <%d} {1: <%d} {2: <%d}\n' % (
+            max_width['name'], max_width['size'], max_width['attr'])
 
         print_str = ''
-        print_str += format_str.format('name', 'size', 'attr', 'mod_date', 'mod_time')
+        print_str += format_str.format('name', 'size', 'attr')
         for entry in entry_info_list:
-            print_str += format_str.format(entry['name'], entry['size'], entry['attr'], entry['date'], entry['time'])
+            print_str += format_str.format(entry['name'], entry['size'], entry['attr'])
 
         return print_str
     

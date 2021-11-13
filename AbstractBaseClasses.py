@@ -72,14 +72,11 @@ class AbstractEntry(metaclass=ABCMeta):
         """
         pass
 
-    @property
     @abstractmethod
-    def modified_date(self) -> str:
-        pass
-
-    @property
-    @abstractmethod
-    def modified_time(self) -> str:
+    def describe_attr(self) -> str:
+        """
+        Diễn giải các thuộc tính dưới dạng chuỗi
+        """
         pass
 
     @property
@@ -117,5 +114,5 @@ class AbstractFile(AbstractEntry):
         pass
 
     @abstractmethod
-    def dump_binary_data(self) -> str:
+    def dump_binary_data(self) -> bytes:
         pass

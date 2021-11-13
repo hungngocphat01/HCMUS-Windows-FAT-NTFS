@@ -92,7 +92,7 @@ class NTFSVolume(AbstractVolume):
                 if (attrTypeID == 128):  # Attribute loại $DATA
                     # Đọc phần nội dung
                     content = read_bytes_buffer(buffer, attribOffset + contentOffset, contentSize)
-                    print('Nội dung: {}\n'.format(toASCII(content)))
+                    print('Nội dung: {}\n'.format(content))
 
                 attribOffset = (attribOffset + attrLength)
 

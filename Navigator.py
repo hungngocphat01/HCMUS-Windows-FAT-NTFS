@@ -100,27 +100,33 @@ class Navigator:
                 max_width[key] = len(str(value)) + 4
 
         for entry in self.current_dir.subentries:
-            entry_info_list.append({
+            entry_info = {
                 'name': entry.name, 
                 'size': 0 if isinstance(entry, AbstractDirectory) else entry.size, 
-                'attr': entry.attr
-            })
+                'attr': entry.describe_attr(),
+                'sector': '' if len(entry.sectors) == 0 else entry.sectors[0]
+            }
+            if entry_info['name'] in ('.', '..'):
+                continue
+            
+            entry_info_list.append(entry_info)
 
-            update_max_width('name', entry.name)
-            update_max_width('attr', hex(int(entry.attr)))
+            update_max_width('name', entry_info['name'])
+            update_max_width('attr', entry_info['attr'])
+            update_max_width('sector', entry_info['sector'])
 
             if isinstance(entry, AbstractFile):
                 update_max_width('size', entry.size)
             else:
                 update_max_width('size', 5)
         
-        format_str = '{0: <%d} {1: <%d} {2: <%d}\n' % (
-            max_width['name'], max_width['size'], max_width['attr'])
+        format_str = '{0: <%d} {1: <%d} {2: <%d} {3: <%d}\n' % (
+            max_width['name'], max_width['size'], max_width['attr'], max_width['sector'])
 
         print_str = ''
-        print_str += format_str.format('name', 'size', 'attr')
+        print_str += format_str.format('name', 'size', 'attr', 'sector')
         for entry in entry_info_list:
-            print_str += format_str.format(entry['name'], entry['size'], entry['attr'])
+            print_str += format_str.format(entry['name'], entry['size'], entry['attr'], entry['sector'])
 
         return print_str
     

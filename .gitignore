@@ -131,3 +131,6 @@ dmypy.json
 # project-specific files 
 TEST_DRIVE_DATA.zip
 test.ipynb
+
+# intellij configs
+.idea/

@@ -228,9 +228,53 @@ class FATFile(AbstractFile):
 
     def __init__(self, main_entry_buffer: bytes, parent_path: str, volume: FATVolume, lfn_entries=[]):
         ...
+        self.entry_buffer = main_entry_buffer
+        self.volume = volume
 
+        # Thuộc tính trạng thái
+        self.attr = read_number_buffer(main_entry_buffer, 0xB, 1)
+
+        # Tên entry 
+        if len(lfn_entries) > 0:
+            lfn_entries.reverse()
+            self.name = FATVolume.process_fat_lfnentries(lfn_entries)
+            lfn_entries.clear()
+        else:
+            self.name = read_bytes_buffer(main_entry_buffer, 0, 11).decode('utf-8').strip()
+
+        
+        # Phần Word(2 byte) cao
+        highbytes = read_number_buffer(main_entry_buffer, 0x14, 2)
+        # Phần Word (2 byte) thấp
+        lowbytes = read_number_buffer(main_entry_buffer, 0x1A, 2)
+
+        # Cluster bắt đầu
+        self.begin_cluster = highbytes * 0x100 + lowbytes
+
+        # Đường dẫn tập tin
+        self.path = parent_path + '/' + self.name
+
+        cluster_chain = self.volume.read_cluster_chain(self.begin_cluster)
+        self.sectors = self.volume.cluster_chain_to_sector_chain(cluster_chain)
+
+        # Kích thước tập tin
+        self.size = read_number_buffer(main_entry_buffer,0x1C,4)
+    
     def dump_binary_data(self):
         ...
 
     def describe_attr(self):
-        ...
+        desc_map = {
+            0x10: 'D',
+            0x20: 'A',
+            0x01: 'R', 
+            0x02: 'H',
+            0x04: 'S',
+        }
+
+        desc_str = ''
+        for attribute in desc_map:
+            if self.attr & attribute == attribute:
+                desc_str += desc_map[attribute]
+        
+        return desc_str

@@ -40,12 +40,20 @@ class NTFSVolume(AbstractVolume):
         # Đọc Bảng MFT
         self.mft_table = read_sectors(self.file_object, self.mft_begin, ...)
 
+        print('Volume information:')
+        print('Bytes per sector:', self.sector_size)
+        print('Sectors per cluster (Sc):', self.sc)
+        print('Reserved sectors (Sb):', self.sb)
+        print('Sector number of logical drive (nv):', self.nv)
+        print('MFT begin sector:', self.mft_begin)
+        print('\n')
+
     def readInfoEntry(self):
         sectorsIndex = self.mft_begin
 
         while (sectorsIndex < self.nv):
             attrTypeID = 99
-            attribOffset = 20
+            attribOffset = 20   # 0x14
 
             # mỗi lần duyệt 2 sector <=> 1024 bytes
             buffer = read_sectors(self.file_object, sectorsIndex, 2)

@@ -88,11 +88,9 @@ class Navigator:
         elif b'NTFS' in ntfs_volfs:
             self.volume = NTFSVolume(file_object)
             print('NTFS detected.')
-            try:
-                self.volume.readInfoEntry()
-                sys.exit(0)
-            except:
-                return
+            self.volume.readInfoEntry()
+            sys.exit(0)
+
         else: 
             raise AttributeError('Filesystem not supported')
 

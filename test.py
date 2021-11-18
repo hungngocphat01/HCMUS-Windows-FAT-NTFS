@@ -1,12 +1,13 @@
 import os
 from FAT import FATDirectory, FATFile, FATVolume
 from LowLevel import *
+from NTFS import NTFSVolume
 
-fd = os.open('../drive_fat.bin', os.O_RDONLY)
+fd = os.open(r'\\.\F:', os.O_RDONLY | os.O_BINARY)
 f = os.fdopen(fd, mode='rb')
 
-volume = FATVolume(f)
-volume.root_directory.build_tree()
-
-for entry in volume.root_directory.subentries:
-    print(entry.name)
+volume = NTFSVolume(f)
+try:
+    volume.readInfoEntry()
+except:
+    pass

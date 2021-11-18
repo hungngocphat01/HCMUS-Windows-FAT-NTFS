@@ -38,7 +38,12 @@ class NTFSVolume(AbstractVolume):
         # Vị trí bắt đầu của MFT
         self.mft_begin = self.sc * read_number_buffer(PBS_buffer, 0x30, 8)
         # Đọc Bảng MFT
-        self.mft_table = read_sectors(self.file_object, self.mft_begin, ...)
+        self.mft_table = read_sectors(self.file_object, self.mft_begin, 1)
+
+        print('Number of bytes/sector (Sc):', self.sc)
+        print('Number of preserved sectors (Sb):', self.sb)
+        print('Disk size in volume (Nv):', self.nv)
+        print('MFT begin sector:', self.mft_begin)
 
     def readInfoEntry(self):
         sectorsIndex = self.mft_begin
@@ -75,39 +80,35 @@ class NTFSVolume(AbstractVolume):
                     nameLength = read_number_buffer(buffer, attribOffset + contentOffset + 64, 1)
                     # Đọc tên tại byte thứ 66 (từ phần nội dung attr)
                     name = read_bytes_buffer(buffer, attribOffset + contentOffset + 66, nameLength * 2)
-                    name = toASCII(name)
+                    name = name.decode('utf-16le')
                     # thời gian tạo tập tin, đọc byte thứ 8-15
-                    timeCreate = filetime_to_dt(read_number_buffer(buffer, attribOffset + contentOffset + 8, 8))
+                    timeCreate = self.filetime_to_dt(read_number_buffer(buffer, attribOffset + contentOffset + 8, 8))
                     # thời gian tập tin có sự thay đổi, đọc byte thứ 16-23
-                    timeModified = filetime_to_dt(read_number_buffer(buffer, attribOffset + contentOffset + 16, 8))
+                    timeModified = self.filetime_to_dt(read_number_buffer(buffer, attribOffset + contentOffset + 16, 8))
                     # thời gian truy cập tập tin mới nhất, đọc byte thứ 32-39
-                    timeAccessed = filetime_to_dt(read_number_buffer(buffer, attribOffset + contentOffset + 32, 8))
+                    timeAccessed = self.filetime_to_dt(read_number_buffer(buffer, attribOffset + contentOffset + 32, 8))
+
+                    if name.startswith('$'):
+                        continue
 
                     print('\nTên: {}\n'
+                          'Size: {}\n'
                           'Sector begin: {}\n'
                           'Create: {}\n'
                           'Modified: {}\n'
-                          'Accessed: {}\n'.format(name, sectorsIndex, timeCreate, timeModified, timeAccessed))
+                          'Accessed: {}\n'.format(name, contentSize, sectorsIndex, timeCreate, timeModified, timeAccessed))
 
-                if (attrTypeID == 128):  # Attribute loại $DATA
+                if (attrTypeID == 128) and contentSize < 512:  # Attribute loại $DATA
                     # Đọc phần nội dung
-                    content = read_bytes_buffer(buffer, attribOffset + contentOffset, contentSize)
-                    print('Nội dung: {}\n'.format(content))
+                    if name.endswith('.txt') or name.endswith('.TXT'):
+                        content = read_bytes_buffer(buffer, attribOffset + contentOffset, contentSize).decode('utf-8')
+                        print('Nội dung: {}\n'.format(content))
 
                 attribOffset = (attribOffset + attrLength)
 
             # Tăng vị trí sector lên 2 <=> 1024 bytes
             sectorsIndex += 2
 
-    @staticmethod
-    def toASCII(str):
-        """
-            Hàm chuyển đổi kết quả từ hàm read_bytes_buffer() thành chuỗi ASCII
-        """
-        tmp = ''.join([hex(character)[2:].upper().zfill(2) \
-                       for character in str]).lower()
-        tmp = bytes.fromhex(tmp).decode('utf-8', errors='ignore')[::2]
-        return tmp
 
     @staticmethod
     def filetime_to_dt(ft):

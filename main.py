@@ -11,7 +11,7 @@ def main():
     print("FAT and NTFS Reader")
     print("Operating System Project 01")
     print("VNU-HCMUS, 2021")
-    print("By 19120615, 19120729, 19120688, 19120630") #TODO: thêm 2 đứa kia vào
+    print("By 19120615, 19120729, 19120688, 19120630")
     print()
 
     try:

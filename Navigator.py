@@ -45,11 +45,16 @@ class Navigator:
 
         volume_path = input('=> Enter your drive path: ')
 
-        if not os.path.exists(volume_path):
-            raise FileNotFoundError('Drive path does not exist')
-        self.volume_path = volume_path
+        if os.name == 'nt':
+            self.volume_path = '\\\\.\\' + volume_path + ':'
+        else:
+            self.volume_path = volume_path
+        print(self.volume_path)
 
     def create_fileobject(self):
+        """
+        Tạo một file descriptor để đọc
+        """
         if self.volume_path.endswith('.zip'):
             return ZipFile(self.volume_path, 'r')
         else: 
@@ -75,10 +80,19 @@ class Navigator:
         # Read boot sector
         bootsec_buffer = read_sectors(file_object, 0, 1)
         fat32_volfs = read_bytes_buffer(bootsec_buffer, 0x52, 8)
+        ntfs_volfs = read_bytes_buffer(bootsec_buffer, 3, 4)
+
         if b'FAT32' in fat32_volfs:
             self.volume = FATVolume(file_object)
             print('FAT32 detected.')
-        # TODO: Detect NTFS
+        elif b'NTFS' in ntfs_volfs:
+            self.volume = NTFSVolume(file_object)
+            print('NTFS detected.')
+            try:
+                self.volume.readInfoEntry()
+                sys.exit(0)
+            except:
+                return
         else: 
             raise AttributeError('Filesystem not supported')
 
@@ -200,6 +214,7 @@ class Navigator:
         for file in self.current_dir.subentries:
             if file.name == filename:
                 binary_data: bytes = file.dump_binary_data()
+                filename = os.path.join('extracted', filename)
                 with open(filename, mode='wb') as out_file:
                     print('Dumping', file.size, 'bytes to', filename, '...')
                     out_file.write(binary_data)
@@ -220,7 +235,7 @@ class Navigator:
 
     def start_shell(self):
         if self.current_dir == None: 
-            raise RuntimeError('You did not select the root directory. This is due to a bug in the program')
+            return
         
         print('Type help for help.')
         while True: 

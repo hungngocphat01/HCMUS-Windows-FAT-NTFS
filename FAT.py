@@ -29,8 +29,8 @@ class FATVolume(AbstractVolume):
         magic_number = read_number_buffer(bootsec_buffer, 0x1FE, 2)
         assert magic_number == 0xAA55, "Invalid boot sector: 0xAA55 not found at offset 0x1FA"
 
-        
-        self.byte_per_sec = read_number_buffer(bootsec_buffer, 0xB, 2)
+        # Số byte/sector
+        self.bps = read_number_buffer(bootsec_buffer, 0xB, 2)
         # Đọc Sc (số sector cho 1 cluster): 1 byte tại 0x0D
         self.sc = read_number_buffer(bootsec_buffer, 0x0D, 1)
         # Đọc Sb (số sector để dành trước bảng FAT): 2 byte tại 0x0E
@@ -45,7 +45,7 @@ class FATVolume(AbstractVolume):
         self.data_begin_sector = self.sb + self.nf * self.sf
 
         print('Volume information:')
-        print('Bytes per sector:', self.byte_per_sec)
+        print('Bytes per sector:', self.bps)
         print('Sectors per cluster (Sc):', self.sc)
         print('Reserved sectors (Sb):', self.sb)
         print('No. of FAT tables (Nf):', self.nf)
@@ -55,15 +55,16 @@ class FATVolume(AbstractVolume):
         print('\n')
 
         # Đọc bảng FAT (sf byte tại offset sb)
-        self.fat_table_buffer = read_sectors(self.file_object, self.sb, self.sf)
+        self.fat_table_buffer = read_sectors(self.file_object, self.sb, self.sf, self.bps)
 
         # RDET buffer
         rdet_cluster_chain = self.read_cluster_chain(self.root_cluster)
         rdet_sector_chain = self.cluster_chain_to_sector_chain(rdet_cluster_chain)
-        rdet_buffer = read_sector_chain(self.file_object, rdet_sector_chain)
+        rdet_buffer = read_sector_chain(self.file_object, rdet_sector_chain, self.bps)
 
         self.root_directory = FATDirectory(rdet_buffer, '', self, isrdet=True)
-        # self.volume_label = read_bytes_buffer(bootsec_buffer, 0x2B, 11)
+        # self.volume_label = read_bytes_buffer(bootsec_buffer, 0x2B, 11).decode('utf-8', errors='ignore')
+        # self.root_directory.name = self.volume_label
 
     def read_cluster_chain(self, n) -> list: 
         """
@@ -110,7 +111,7 @@ class FATVolume(AbstractVolume):
             name += read_bytes_buffer(subentry, 1, 10)
             name += read_bytes_buffer(subentry, 0xE, 12)
             name += read_bytes_buffer(subentry, 0x1C, 4)
-        name = name.decode('utf-16le')
+        name = name.decode('utf-16le', errors='ignore')
 
         if name.find('\x00') > 0:
             name = name[:name.find('\x00')]
@@ -144,7 +145,7 @@ class FATDirectory(AbstractDirectory):
                 self.name = FATVolume.process_fat_lfnentries(lfn_entries)
                 lfn_entries.clear()
             else:
-                self.name = read_bytes_buffer(main_entry_buffer, 0, 11).decode('utf-8').strip()
+                self.name = read_bytes_buffer(main_entry_buffer, 0, 11).decode('utf-8', errors='ignore').strip()
             # Status
             self.attr = read_number_buffer(main_entry_buffer, 0xB, 1)
 
@@ -154,6 +155,7 @@ class FATDirectory(AbstractDirectory):
             self.begin_cluster = highbytes * 0x100 + lowbytes
             self.path = parent_path + '/' + self.name
         else:
+            self.name = read_bytes_buffer(main_entry_buffer, 0, 11).decode('utf-8', errors='ignore').strip()
             self.begin_cluster = self.volume.root_cluster
             self.path = ''
 
@@ -172,7 +174,7 @@ class FATDirectory(AbstractDirectory):
         subentry_index = 0
 
         # Đọc SDET (dữ liệu nhị phân) của thư mục
-        sdet_buffer = read_sector_chain(self.volume.file_object, self.sectors)
+        sdet_buffer = read_sector_chain(self.volume.file_object, self.sectors, self.volume.bps)
         lfn_entries_queue = []
 
         while True:
@@ -183,20 +185,13 @@ class FATDirectory(AbstractDirectory):
                 # Là thư mục
                 self.subentries.append(FATDirectory(subentry_buffer, self.path, self.volume, lfn_entries=lfn_entries_queue))
             elif entry_type & 0x20 == 0x20:
-                # Là thư mục
+                # Là tập tin (archive)
                 self.subentries.append(FATFile(subentry_buffer, self.path, self.volume, lfn_entries=lfn_entries_queue))
             elif entry_type & 0x0F == 0x0F:
                 lfn_entries_queue.append(subentry_buffer)
             if entry_type == 0:
                 break
             subentry_index += 32
-
-    def process_subentry(self, binary_data):
-        """
-        Hàm xử lý subentry với entry hiện tại
-        Cần gán lại filename của entry hiện tại cho dữ liệu nhận được từ subentry truyền vào từ tham số
-        """
-        pass
 
     def describe_attr(self):
         """
@@ -240,7 +235,9 @@ class FATFile(AbstractFile):
             self.name = FATVolume.process_fat_lfnentries(lfn_entries)
             lfn_entries.clear()
         else:
-            self.name = read_bytes_buffer(main_entry_buffer, 0, 11).decode('utf-8').strip()
+            name_base = read_bytes_buffer(main_entry_buffer, 0, 8).decode('utf-8', errors='ignore').strip()
+            name_ext = read_bytes_buffer(main_entry_buffer, 8, 3).decode('utf-8', errors='ignore').strip()
+            self.name = name_base + '.' + name_ext
 
         
         # Phần Word(2 byte) cao
@@ -261,7 +258,12 @@ class FATFile(AbstractFile):
         self.size = read_number_buffer(main_entry_buffer,0x1C,4)
     
     def dump_binary_data(self):
-        ...
+        """
+        Trả về mảng các byte của tập tin
+        """
+        binary_data = read_sector_chain(self.volume.file_object, self.sectors, self.volume.bps)
+        # "trim" bớt cho về đúng kích thước
+        return binary_data[:self.size]
 
     def describe_attr(self):
         desc_map = {

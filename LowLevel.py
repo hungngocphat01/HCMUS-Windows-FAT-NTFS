@@ -11,16 +11,17 @@ def dec(hex: str) -> int:
     """
     return int(hex, 16)
 
-def read_sectors(file, sector_begin, n_sector=1) -> bytes:
+def read_sectors(file, sector_begin, n_sector=1, bps=512) -> bytes:
     """
     Hàm đọc `n_sector` sectors, bắt đầu tại sector có chỉ số `sector_begin`.
+    `bps`: số byte cho mỗi sector.
     Trả về: buffer đọc được.
     
     Ví dụ: đọc 4 sector bắt đầu từ sector 256
     >>> read_sectors(file, 256, 4)
     """
-    file.seek(512 * sector_begin)
-    return file.read(512 * n_sector)
+    file.seek(bps * sector_begin)
+    return file.read(bps * n_sector)
 
 def read_bytes_buffer(buffer, offset, size=1) -> bytes:
     """
@@ -46,12 +47,12 @@ def read_number_buffer(buffer, offset, size) -> int:
     buffer = read_bytes_buffer(buffer, offset, size)
     return dec(buffer[::-1].hex())
 
-def read_sector_chain(file_object, sector_list):
+def read_sector_chain(file_object, sector_list, bps=512):
     """
     Hàm đọc một dãy các sector từ mảng.
     Trả về: buffer đọc được.
     """
     buffer = b''
     for sector in sector_list:
-        buffer += read_sectors(file_object, sector, 1)
+        buffer += read_sectors(file_object, sector, 1, bps)
     return buffer

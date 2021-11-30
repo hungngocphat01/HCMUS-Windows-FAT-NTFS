@@ -1,3 +1,7 @@
+# Đồ án Hệ điều hành: FAT32/NTFS Reader
+
+FIT@HCMUS, 2021.
+
 Chú thích các file 
 - `AbstractBaseClass`: chứa mấy cái abstract class để implement thành các concrete class (vd: `FATVolume` extends `AbstractVolume`, `FATFile` extends `AbstractFile`, `NTFSDirectory` extends `AbstractDirectory`).
 - `FAT`: chứa tất cả các concrete class cho FAT. 
